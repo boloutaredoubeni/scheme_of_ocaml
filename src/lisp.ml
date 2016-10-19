@@ -1,7 +1,5 @@
 open Core.Std
 
-type env = () [@@deriving sexp, eq, show]
-
 (** Lisp types *)
 type t =
   | Atom of string
@@ -15,7 +13,7 @@ type t =
   (* (x1 x2 ... xn) *)
   | List of t list
   (* (lambda (arg1 .. argn) <expr>) *)
-  | Lambda of t list * t * env
+  | Lambda of t list * t
   | Eq of t list
   | Neq of t list
   | Cond of (t * t) list

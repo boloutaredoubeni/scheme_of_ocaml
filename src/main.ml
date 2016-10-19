@@ -11,15 +11,15 @@ let read_sexp input =
 
 
 let print_expr = function
-  | Ok lisp ->  String.concat 
-      ~sep:" " [";;=>"; Lisp.show lisp; "\n"]
+  | Ok lisp ->  String.concat
+                  ~sep:" " [";;=>"; Lisp.show lisp; "\n"]
   | _ -> failwith "Error"
 
 let rec repl () =
   let printer to_print =
-      Printf.sprintf "%s" @@ to_print
-      |> Out_channel.output_string stdout;
-      Out_channel.flush stdout;
+    Printf.sprintf "%s" @@ to_print
+    |> Out_channel.output_string stdout;
+    Out_channel.flush stdout;
   in
   printer "λ: ";
   match In_channel.input_line stdin with
@@ -28,16 +28,16 @@ let rec repl () =
   | Some "quit" -> ()
   | Some expr ->
     try
-     let u = expr
-             |> read_sexp
-             |> parse_sexp
-             |> Result.ok
-             |> Option.map ~f:(fun lisp -> print_expr @@ evaluate lisp)
-             |> Option.value ~default:"ERROR"
-             |> printer
-        (*|> codegen
-        |> print_codegen*)
-     in
+      let u = expr
+              |> read_sexp
+              |> parse_sexp
+              |> Result.ok
+              |> Option.map ~f:(fun lisp -> print_expr @@ evaluate lisp)
+              |> Option.value ~default:"ERROR"
+              |> printer
+              (*|> codegen
+                |> print_codegen*)
+      in
       repl u;
     with
     | e ->

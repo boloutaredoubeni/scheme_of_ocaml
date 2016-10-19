@@ -1,6 +1,6 @@
 ### Run it
 ```
-corebuild src/lisp.{byte,native} -pkg ollvm
+./corebuild src/lisp.{byte,native} -pkg ollvm
 ```
 
 #### Set up Utop

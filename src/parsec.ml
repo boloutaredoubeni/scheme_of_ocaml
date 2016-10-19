@@ -16,8 +16,8 @@ let parse_atom = function
 
 let parse_bool = function
   | Ok lisp -> Result.return lisp
-  | Error sexp as err-> 
-    try 
+  | Error sexp as err->
+    try
       Result.return @@ Bool (bool_of_sexp @@ sexp)
     with
     | _ -> err
@@ -33,33 +33,33 @@ let parse_number = function
 let rec parse_sexp sexp =
   sexp
   |> choose
-  [ 
-    parse_number;
-    parse_bool;
-    parse_atom;
-    parse_function;
-    parse_neq;
-    parse_eq;
-    parse_first_expr;
-    parse_quote;
-    parse_rest_expr;
-    parse_add;
-     parse_and;
+    [
+      parse_number;
+      parse_bool;
+      parse_atom;
+      parse_function;
+      parse_neq;
+      parse_eq;
+      parse_first_expr;
+      parse_quote;
+      parse_rest_expr;
+      parse_add;
+      parse_and;
       parse_or;
-    parse_div;
-    parse_sub;
-    parse_mult;
-        parse_cons;
-        parse_cond;
-    parse_list;
-  ]
+      parse_div;
+      parse_sub;
+      parse_mult;
+      parse_cons;
+      parse_cond;
+      parse_list;
+    ]
 and parse_list = function
   | Ok lisp -> Result.return lisp
-  | Error (Sexp.List lst) as err -> 
+  | Error (Sexp.List lst) as err ->
     begin
       match
-        lst 
-        |> List.traverse ~f:(fun s -> parse_sexp @@ Error s) 
+        lst
+        |> List.traverse ~f:(fun s -> parse_sexp @@ Error s)
       with
       | Ok l -> Result.return @@ List l
       | _ -> err
@@ -71,25 +71,25 @@ and parse_function = function
     let args = parse_params @@ parse_sexp @@ Error params in
     let fn_body = match body with
       | [expr] -> begin
-        match Result.ok @@ parse_sexp @@ Error expr with
-        | Some body_of_function -> body_of_function
-        | None -> failwith "Improper function body"
-      end
+          match Result.ok @@ parse_sexp @@ Error expr with
+          | Some body_of_function -> body_of_function
+          | None -> failwith "Improper function body"
+        end
       | _ -> failwith "Improper function body" in
-    Result.return @@ Lambda (args, fn_body, ())
+    Result.return @@ Lambda (args, fn_body)
   | err -> err
 and parse_params = function
   | Ok (Atom _ as param) -> [param]
   | Ok List params when List.for_all params ~f:(fun p -> match p with Atom _ -> true | _ -> false) ->
-      params
+    params
   | _ -> failwith "Failed to parse function argument"
 and parse_eq = function
   | Ok lisp -> Result.return lisp
-  | Error Sexp.List (Sexp.Atom "=":: rest) as err -> 
+  | Error Sexp.List (Sexp.Atom "=":: rest) as err ->
     begin
       match
-        rest 
-        |> List.traverse ~f:(fun s -> parse_sexp @@ Error s) 
+        rest
+        |> List.traverse ~f:(fun s -> parse_sexp @@ Error s)
       with
       | Ok l -> Result.return @@ Eq l
       | _ -> err
@@ -97,19 +97,19 @@ and parse_eq = function
   | err -> err
 and parse_neq = function
   | Ok lisp -> Result.return lisp
-  | Error Sexp.List (Sexp.Atom "/=":: rest) as err -> 
+  | Error Sexp.List (Sexp.Atom "/=":: rest) as err ->
     begin
       match
-        rest 
-        |> List.traverse ~f:(fun s -> parse_sexp @@ Error s) 
+        rest
+        |> List.traverse ~f:(fun s -> parse_sexp @@ Error s)
       with
       | Ok l -> Result.return @@ Neq l
       | _ -> err
     end
   | err -> err
-and parse_first_expr = function 
+and parse_first_expr = function
   | Ok lisp -> Result.return lisp
-  | Error Sexp.List (Sexp.Atom "first":: rest) -> 
+  | Error Sexp.List (Sexp.Atom "first":: rest) ->
     begin
       match parse_sexp @@ Error (Sexp.List rest) with
       | Ok List l -> Result.return @@ First (List l)
@@ -119,7 +119,7 @@ and parse_first_expr = function
   | err -> err
 and parse_rest_expr = function
   | Ok lisp -> Result.return lisp
-  | Error Sexp.List (Sexp.Atom "rest":: rest) -> 
+  | Error Sexp.List (Sexp.Atom "rest":: rest) ->
     begin
       match parse_sexp @@ Error (Sexp.List rest) with
       | Ok l -> Result.return @@ Rest l
@@ -128,8 +128,8 @@ and parse_rest_expr = function
   | err -> err
 and parse_quote = function
   | Ok lisp -> Result.return lisp
-  | Error Sexp.List (Sexp.Atom "quote":: rest) -> 
-     begin
+  | Error Sexp.List (Sexp.Atom "quote":: rest) ->
+    begin
       match parse_sexp @@ Error (Sexp.List rest) with
       | Ok l -> Result.return @@ Quote l
       | _ ->  failwith "Invalid use of quote"
@@ -137,11 +137,11 @@ and parse_quote = function
   | err -> err
 and parse_add = function
   | Ok lisp -> Result.return lisp
-  | Error Sexp.List (Sexp.Atom "+" :: lst) as err -> 
+  | Error Sexp.List (Sexp.Atom "+" :: lst) as err ->
     begin
       match
-        lst 
-        |> List.traverse ~f:(fun s -> parse_sexp @@ Error s) 
+        lst
+        |> List.traverse ~f:(fun s -> parse_sexp @@ Error s)
       with
       | Ok l -> Result.return @@ Add l
       | _ -> err
@@ -149,11 +149,11 @@ and parse_add = function
   | err -> err
 and parse_sub = function
   | Ok lisp -> Result.return lisp
-  | Error Sexp.List (Sexp.Atom "-" :: lst) as err -> 
+  | Error Sexp.List (Sexp.Atom "-" :: lst) as err ->
     begin
       match
-        lst 
-        |> List.traverse ~f:(fun s -> parse_sexp @@ Error s) 
+        lst
+        |> List.traverse ~f:(fun s -> parse_sexp @@ Error s)
       with
       | Ok l -> Result.return @@ Sub l
       | _ -> err
@@ -161,11 +161,11 @@ and parse_sub = function
   | err -> err
 and parse_div = function
   | Ok lisp -> Result.return lisp
-  | Error Sexp.List (Sexp.Atom "/" :: lst) as err -> 
+  | Error Sexp.List (Sexp.Atom "/" :: lst) as err ->
     begin
       match
-        lst 
-        |> List.traverse ~f:(fun s -> parse_sexp @@ Error s) 
+        lst
+        |> List.traverse ~f:(fun s -> parse_sexp @@ Error s)
       with
       | Ok l -> Result.return @@ Div l
       | _ -> err
@@ -173,11 +173,11 @@ and parse_div = function
   | err -> err
 and parse_mult = function
   | Ok lisp -> Result.return lisp
-  | Error Sexp.List (Sexp.Atom "*" :: lst) as err -> 
+  | Error Sexp.List (Sexp.Atom "*" :: lst) as err ->
     begin
       match
-        lst 
-        |> List.traverse ~f:(fun s -> parse_sexp @@ Error s) 
+        lst
+        |> List.traverse ~f:(fun s -> parse_sexp @@ Error s)
       with
       | Ok l -> Result.return @@ Mul l
       | _ -> err
@@ -185,11 +185,11 @@ and parse_mult = function
   | err -> err
 and parse_and = function
   | Ok lisp -> Result.return lisp
-  | Error Sexp.List (Sexp.Atom "&&":: rest) as err -> 
+  | Error Sexp.List (Sexp.Atom "&&":: rest) as err ->
     begin
       match
-        rest 
-        |> List.traverse ~f:(fun s -> parse_sexp @@ Error s) 
+        rest
+        |> List.traverse ~f:(fun s -> parse_sexp @@ Error s)
       with
       | Ok l -> Result.return @@ And l
       | _ -> err
@@ -197,11 +197,11 @@ and parse_and = function
   | err -> err
 and parse_or = function
   | Ok lisp -> Result.return lisp
-  | Error Sexp.List (Sexp.Atom "||":: rest) as err -> 
+  | Error Sexp.List (Sexp.Atom "||":: rest) as err ->
     begin
       match
-        rest 
-        |> List.traverse ~f:(fun s -> parse_sexp @@ Error s) 
+        rest
+        |> List.traverse ~f:(fun s -> parse_sexp @@ Error s)
       with
       | Ok l -> Result.return @@ Or l
       | _ -> err
@@ -209,7 +209,7 @@ and parse_or = function
   | err -> err
 and parse_cons = function
   | Ok lisp -> Result.return lisp
-  | Error Sexp.List ([Sexp.Atom "cons"; l; r]) as err -> 
+  | Error Sexp.List ([Sexp.Atom "cons"; l; r]) as err ->
     begin
       let left = parse_sexp @@ Error l in
       let right = parse_sexp @@ Error r in
@@ -221,18 +221,18 @@ and parse_cons = function
 and parse_cond = function
   | Ok lisp -> Result.return lisp
   | Error Sexp.List (Sexp.Atom "cond":: rest) as err->
-    begin 
-      let parsed_vals = rest 
-        |> List.traverse ~f:(fun s -> parse_sexp @@ Error s)  in
+    begin
+      let parsed_vals = rest
+                        |> List.traverse ~f:(fun s -> parse_sexp @@ Error s)  in
       match
-       parsed_vals
-        |> Result.map ~f:(fun l -> 
-          List.map l ~f:(fun elem ->
-            match elem with
-            | List [x;y] -> (x, y)
-            | _ -> failwith "Not a pair"
-          ) 
-        )
+        parsed_vals
+        |> Result.map ~f:(fun l ->
+            List.map l ~f:(fun elem ->
+                match elem with
+                | List [x;y] -> (x, y)
+                | _ -> failwith "Not a pair"
+              )
+          )
       with
       | Ok cond -> Result.return @@ Cond cond
       | _ -> err

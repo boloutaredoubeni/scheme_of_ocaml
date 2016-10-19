@@ -18,6 +18,4 @@ module List = struct
     | err -> failwith "Failed to fold func"
 
   include List
-
-
 end
