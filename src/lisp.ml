@@ -3,7 +3,6 @@ open Core.Std
 (** Lisp types *)
 type t =
   | Atom of string
-  (* FIXME: sexplib strips strings *)
   (* (string <atom>) *)
   | String of string
   (* true false *)
@@ -30,6 +29,6 @@ type t =
   | Gte of t list
   | And of t list
   | Or of t list
-  | Not of t list
+  (* | Not of t *)
   | Cons of t * t
   [@@deriving sexp, eq, show]

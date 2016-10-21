@@ -14,6 +14,15 @@ let parse_atom = function
   | Error (Sexp.Atom atom) -> Result.return @@ Atom atom
   | err -> err
 
+let parse_string = function
+  | Ok lisp -> Result.return lisp
+  | Error (Sexp.Atom atom) as err ->
+    if (String.get atom 0) = '\'' then
+      err
+    else
+      Result.return @@ String atom
+  | err -> err
+
 let parse_bool = function
   | Ok lisp -> Result.return lisp
   | Error sexp as err->
@@ -36,6 +45,7 @@ let rec parse_sexp sexp =
     [
       parse_number;
       parse_bool;
+      parse_string;
       parse_atom;
       parse_function;
       parse_neq;
