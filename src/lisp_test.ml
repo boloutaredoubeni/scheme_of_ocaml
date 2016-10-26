@@ -15,11 +15,24 @@ module Mock_compiler = struct
 
 end
 
-module type Test_mod = sig
-  val tests: (string * [> `Quick ] * (unit -> unit)) list
+module Lisp_test: Alcotest.TESTABLE = struct 
+  include Lisp
 end
 
-module Parse_test: Test_mod = struct
+module Fmt = struct 
+  include Fmt
+  include Fmt.Dump
+  let pf = Format.fprintf
+  let lisp ppf v = pf ppf "%s" (Lisp.show v) 
+end
+
+let lisp = Alcotest.testable Fmt.lisp Lisp.equal
+
+module type TEST_MOD = sig
+  val tests: (string * [> `Quick | `Slow ] * (unit -> unit)) list
+end
+
+module Parse_test: TEST_MOD = struct
   let test_parse_empty () =
     Alcotest.check_raises "Fails to parse empty" (Failure "Failed to parse input") (fun () -> ignore @@ Mock_compiler.compile "")
 
@@ -32,41 +45,42 @@ module Parse_test: Test_mod = struct
   ]
 end
 
-let bool_expr_helper expr error_val =
+let test_helper expr =
   expr
   |> Mock_compiler.compile
   |> Result.ok
-  |> Option.value_map ~default:error_val ~f:(fun lisp -> match lisp with Lisp.Bool b -> b | _ -> assert false)
+  |> Option.value_exn
 
-module Lisp_eq_test: Test_mod = struct
+
+module Lisp_eq_test: TEST_MOD = struct
 
   let test_lisp_equal_sign_nums () =
-    Alcotest.(check bool) "Check equal numbers with equal sign" true (bool_expr_helper "(= 2 2)" false)
+    Alcotest.(check lisp) "Check equal numbers with equal sign" (Lisp.Bool true) (test_helper "(= 2 2)")
 
   let test_lisp_equal_sign_neq_nums () =
-    Alcotest.(check bool) "Check not equal numbers with equal sign" false (bool_expr_helper "(= 2 3)" true)
+    Alcotest.(check lisp) "Check not equal numbers with equal sign" (Lisp.Bool false) (test_helper "(= 2 3)")
 
   let test_lisp_equal_sign_atoms () =
-    Alcotest.(check bool) "Check equal atoms with equal sign" true (bool_expr_helper "(= '2 '2)" false)
+    Alcotest.(check lisp) "Check equal atoms with equal sign" (Lisp.Bool true) (test_helper "(= '2 '2)")
 
   let test_lisp_equal_sign_neq_atoms () =
-    Alcotest.(check bool) "Check not equal atoms with equal sign" false (bool_expr_helper "(= '2 'atom)" true)
+    Alcotest.(check lisp) "Check not equal atoms with equal sign" (Lisp.Bool false) (test_helper "(= '2 'atom)")
 
   let test_lisp_equal_sign_str () =
-    Alcotest.(check bool) "Check equal strings with equal sign" true (bool_expr_helper "(= \"a string\" \"a string\")" false)
+    Alcotest.(check lisp) "Check equal strings with equal sign" (Lisp.Bool true) (test_helper "(= \"a string\" \"a string\")" )
 
   let test_lisp_equal_sign_neq_str () =
-    Alcotest.(check bool) "Check not equal strings with equal sign" false (bool_expr_helper "(= \"a string\" \"other string\")" true)
+    Alcotest.(check lisp) "Check not equal strings with equal sign" (Lisp.Bool false) (test_helper "(= \"a string\" \"other string\")" )
 
   let test_lisp_equal_sign_list () =
-    Alcotest.(check bool) "Check equal lists with equal sign" true (bool_expr_helper "(= (quote 301 'atom \"a string\") (quote 301 'atom \"a string\"))" true)
+    Alcotest.(check lisp) "Check equal lists with equal sign" (Lisp.Bool true) (test_helper "(= (quote 301 'atom \"a string\") (quote 301 'atom \"a string\"))")
 
   let test_lisp_equal_sign_neq_list () =
-    Alcotest.(check bool) "Check not equal lists with equal sign" false (bool_expr_helper "(= (quote 1 'atom \"a string\") (quote 301 'atom \"a string\"))" true)
+    Alcotest.(check lisp) "Check not equal lists with equal sign" (Lisp.Bool false) (test_helper "(= (quote 1 'atom \"a string\") (quote 301 'atom \"a string\"))")
 
   let test_lisp_equal_sign_multi_expr () =
     (* FIXME *)
-    Alcotest.(check bool) "Check equal exprs with equal sign" true (bool_expr_helper "(= 3 3 3 3)" false)
+    Alcotest.(check lisp) "Check equal exprs with equal sign" (Lisp.Bool true) (test_helper "(= 3 3 3 3)")
 
   let tests = [
     "Equal numbers", `Quick, test_lisp_equal_sign_nums;
@@ -82,30 +96,30 @@ module Lisp_eq_test: Test_mod = struct
 
 end
 
-module Lisp_neq_test: Test_mod = struct
+module Lisp_neq_test: TEST_MOD = struct
   let test_lisp_equal_sign_nums () =
-    Alcotest.(check bool) "Check equal numbers with equal sign" false (bool_expr_helper "(/= 2 2)" true)
+    Alcotest.(check lisp) "Check equal numbers with equal sign"  (Lisp.Bool false)  (test_helper "(/= 2 2)")
 
   let test_lisp_equal_sign_neq_nums () =
-    Alcotest.(check bool) "Check not equal numbers with equal sign" true (bool_expr_helper "(/= 2 3)" false)
+    Alcotest.(check lisp) "Check not equal numbers with equal sign" (Lisp.Bool true) (test_helper "(/= 2 3)")
 
   let test_lisp_equal_sign_atoms () =
-    Alcotest.(check bool) "Check equal atoms with equal sign" false (bool_expr_helper "(/= '2 '2)" true)
+    Alcotest.(check lisp) "Check equal atoms with equal sign"  (Lisp.Bool false)  (test_helper "(/= '2 '2)")
 
   let test_lisp_equal_sign_neq_atoms () =
-    Alcotest.(check bool) "Check not equal atoms with equal sign" true (bool_expr_helper "(/= '2 'atom)" false)
+    Alcotest.(check lisp) "Check not equal atoms with equal sign" (Lisp.Bool true) (test_helper "(/= '2 'atom)")
 
   let test_lisp_equal_sign_str () =
-    Alcotest.(check bool) "Check equal strings with equal sign" false (bool_expr_helper "(/= \"a string\" \"a string\")" true)
+    Alcotest.(check lisp) "Check equal strings with equal sign"  (Lisp.Bool false)  (test_helper "(/= \"a string\" \"a string\")")
 
   let test_lisp_equal_sign_neq_str () =
-    Alcotest.(check bool) "Check not equal strings with equal sign" true (bool_expr_helper "(/= \"a string\" \"other string\")" false)
+    Alcotest.(check lisp) "Check not equal strings with equal sign" (Lisp.Bool true) (test_helper "(/= \"a string\" \"other string\")")
 
   let test_lisp_equal_sign_list () =
-    Alcotest.(check bool) "Check equal lists with equal sign" false (bool_expr_helper "(/= (quote 301 'atom \"a string\") (quote 301 'atom \"a string\"))" true)
+    Alcotest.(check lisp) "Check equal lists with equal sign"  (Lisp.Bool false)  (test_helper "(/= (quote 301 'atom \"a string\") (quote 301 'atom \"a string\"))")
 
   let test_lisp_equal_sign_neq_list () =
-    Alcotest.(check bool) "Check not equal lists with equal sign" true (bool_expr_helper "(/= (quote 1 'atom \"a string\") (quote 301 'atom \"a string\"))" false)
+    Alcotest.(check lisp) "Check not equal lists with equal sign" (Lisp.Bool true) (test_helper "(/= (quote 1 'atom \"a string\") (quote 301 'atom \"a string\"))")
 
   let tests = [
     "Equal numbers", `Quick, test_lisp_equal_sign_nums;
@@ -119,12 +133,12 @@ module Lisp_neq_test: Test_mod = struct
   ]
 end
 
-module Lisp_and_test: Test_mod = struct
+module Lisp_and_test: TEST_MOD = struct
   let test_lisp_and_bool () =
-    Alcotest.(check bool) "check primitive bools" true (bool_expr_helper "(&& true true)" false)
+    Alcotest.(check lisp) "check primitive bools" (Lisp.Bool true) (test_helper "(&& true true)")
 
   let test_lisp_not_and_bool () =
-    Alcotest.(check bool) "check primitive bools" false (bool_expr_helper "(&& true false)" true)
+    Alcotest.(check lisp) "check primitive bools" (Lisp.Bool false) (test_helper "(&& true false)")
 
 
   let tests = [
@@ -134,18 +148,18 @@ module Lisp_and_test: Test_mod = struct
 
 end
 
-module Lisp_or_test: Test_mod = struct
+module Lisp_or_test: TEST_MOD = struct
   let test_lisp_or_bool () =
-    Alcotest.(check bool) "check primitive bools" true (bool_expr_helper "(|| true true)" false)
+    Alcotest.(check lisp) "check primitive bools" (Lisp.Bool true) (test_helper "(|| true true)")
 
   let test_lisp_or_1_bool () =
-    Alcotest.(check bool) "check primitive bools" true (bool_expr_helper "(|| true false)" false)
+    Alcotest.(check lisp) "check primitive bools" (Lisp.Bool true) (test_helper "(|| true false)")
 
   let test_lisp_or_2_bool () =
-    Alcotest.(check bool) "check primitive bools" true (bool_expr_helper "(|| false true)" false)
+    Alcotest.(check lisp) "check primitive bools" (Lisp.Bool true) (test_helper "(|| false true)")
 
   let test_lisp_none_true () =
-    Alcotest.(check bool) "check primitive bools" false (bool_expr_helper "(|| false false)" true)
+    Alcotest.(check lisp) "check primitive bools" (Lisp.Bool false) (test_helper "(|| false false)")
 
 
   let tests = [
@@ -156,6 +170,59 @@ module Lisp_or_test: Test_mod = struct
   ]
 end
 
+module Lisp_binop_test: TEST_MOD = struct
+
+  let test_lisp_add_two_nums () =
+    Alcotest.(check lisp) "add numbers" (Lisp.Number 0.) (test_helper "(+ 2 -2 4 -4)")
+
+  let test_lisp_sub_two_nums () =
+    Alcotest.(check lisp) "sub numbers" (Lisp.Number 0.) (test_helper "(- 2 2 -4 4)")
+
+  let test_lisp_div_two_nums () =
+    Alcotest.(check lisp) "div numbers" (Lisp.Number 4.) (test_helper "(/ 2 (/ 1 2))")
+
+  let test_lisp_multi_two_nums () =
+    Alcotest.(check lisp) "multi numbers" (Lisp.Number 120.) (test_helper "(* 5 4 3 2 1)")
+
+  let tests = [
+    "add two numbers", `Quick, test_lisp_add_two_nums;
+    "sub two numbers", `Quick, test_lisp_sub_two_nums;
+    "div two numbers", `Quick, test_lisp_div_two_nums;
+    "multi two numbers", `Quick, test_lisp_multi_two_nums;
+  ]
+end
+
+module Lisp_list_test: TEST_MOD = struct 
+
+  let test_first () =
+    Alcotest.(check lisp) "first" (Lisp.String "some sentance of words") (test_helper "(first \"some sentance of words\" 456 'a-symbol)")
+
+  let test_last () =
+    let expected = test_helper "(rest \"some sentance of words\" 456 'a-symbol)" in
+    let actual = test_helper  "(quote 456 'a-symbol)" in
+    Alcotest.(check lisp) "last" expected actual
+
+  let test_cons () =
+    let expected = test_helper "(quote \"some sentance of words\" 456 'a-symbol)" in
+    let actual = test_helper  "(cons \"some sentance of words\" (cons 456 'a-symbol))" in
+    Alcotest.(check lisp) "cons" expected actual
+
+  let tests = [
+    "get the head", `Quick, test_first;
+    "get the tail", `Quick, test_last;
+    "make a list", `Quick, test_cons;
+  ]
+end
+
+module Lisp_define_and_function_test: TEST_MOD = struct 
+
+  
+
+  let tests = [
+
+  ]
+end
+
 let () =
   Alcotest.run "Unit tests" [
     "Parsing", Parse_test.tests;
@@ -163,4 +230,7 @@ let () =
     "Not_Equal_Operator", Lisp_neq_test.tests;
     "And_Operator", Lisp_and_test.tests;
     "Or_Operator", Lisp_or_test.tests;
+    "Binop_Operators", Lisp_binop_test.tests;
+    "List operations", Lisp_list_test.tests;
+    "Lisp functions and define", Lisp_define_and_function_test.tests;
   ]

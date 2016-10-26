@@ -13,9 +13,9 @@ module List = struct
       ~f:folder
       ~init:(Result.return [])
 
-  let fold_1 ~f = function
+  (*let fold_1 ~f = function
     | (x::xs) -> List.fold ~f:f ~init:x
-    | err -> failwith "Failed to fold func"
+    | err -> failwith "Failed to fold func"*)
 
   include List
 end

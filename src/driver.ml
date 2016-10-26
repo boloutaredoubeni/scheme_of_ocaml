@@ -5,13 +5,13 @@ open Eval
 
 let read_sexp input =
   try
-    Error (Sexp.of_string @@ input)
+    Result.Error (Sexp.of_string @@ input)
   with
   | _ -> failwith "Failed to parse input"
 
 
 let print_expr = function
-  | Ok lisp -> String.concat ~sep:" " [";;=>"; Lisp.show lisp; "\n"]
+  | Result.Ok lisp -> String.concat ~sep:" " [";;=>"; Lisp.show lisp; "\n"]
   | _ -> failwith "Error"
 
 let rec repl () =

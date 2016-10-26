@@ -112,7 +112,7 @@ let rec evaluate lisp =
   | Gte atoms -> (List.traverse ~f:evaluate atoms) >>= (apply (bool_binop gte))
   | And atoms -> (List.traverse ~f:evaluate atoms) >>= (apply lisp_and)
   | Or atoms -> (List.traverse ~f:evaluate atoms) >>= (apply lisp_or)
-  | First atom -> (evaluate atom) >>= car
+  | First atom -> print_endline @@ "Whos on first again" ^ Lisp.show atom; (evaluate atom) >>= car
   | Rest atom -> (evaluate atom) >>= cdr
   | Cons (x, y) -> [evaluate x; evaluate y] |> Or_error.all >>= (apply cons)
   | Lambda (params, body) as fn ->
@@ -123,7 +123,7 @@ let rec evaluate lisp =
       | None ->
         Lisp_env.add ~key:name ~data:body;
         Or_error.return @@ Lisp.List []
-      | Some fn_params ->
+      | Some _ ->
         Lisp_env.add ~key:name ~data:fn;
         Or_error.return @@ Lisp.List []
     end
@@ -132,8 +132,8 @@ let rec evaluate lisp =
     let (conds, exprs) = List.unzip atoms in
     let rest_of_conds = List.drop_while conds ~f:(fun cond ->
         match evaluate cond with
-        | Ok Lisp.Bool false -> true
-        | Ok l -> false
+        | Result.Ok Lisp.Bool false -> true
+        | Result.Ok _ -> false
         | _ -> false
       ) in
     let idx = (List.length rest_of_conds) - 1 in
@@ -142,9 +142,7 @@ let rec evaluate lisp =
         Some lisp -> evaluate lisp
       | None -> failwith "Invalid conds"
     end
-  | List atoms ->
-    (List.traverse ~f:evaluate atoms) >>= apply_fn
-  | err -> failwith @@ Lisp.show err
+  | List atoms -> (List.traverse ~f:evaluate atoms) >>= apply_fn
 and apply_fn exprs =
   let fn = List.hd_exn exprs in
   let number_of_args = exprs
