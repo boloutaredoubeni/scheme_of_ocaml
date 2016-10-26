@@ -8,10 +8,13 @@ bug-reports: "https://github.com/boloutaredoubeni/scheme_of_ocaml/issues"
 license: "MIT"
 dev-repo: "https://github.com/bolouataredoubeni/scheme_of_ocaml.git"
 build: [
-  ["./configure" "--prefix=%{prefix}%"]
-  [make]
+  [./corebuild src/lisp_main.native]
 ]
 install: [make "install"]
+build-test: [
+  [./corebuild src/lisp_test.native -pkg alcotest]
+  [./lisp_test.native]
+]
 remove: ["ocamlfind" "remove" "scheme_of_ocaml"]
 depends: [
   "ocamlfind" {build}
