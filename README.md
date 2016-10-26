@@ -1,5 +1,7 @@
 ## A lisp interpreter
 
+[![Build Status](https://travis-ci.org/boloutaredoubeni/scheme_of_ocaml.svg?branch=master)](https://travis-ci.org/boloutaredoubeni/scheme_of_ocaml)
+
 ### Depencencies
 
 1. OCaml
