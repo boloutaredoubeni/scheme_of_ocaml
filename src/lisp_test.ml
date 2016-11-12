@@ -10,7 +10,7 @@ module Mock_compiler = struct
     |> read_sexp
     |> parse_sexp
     |> Result.ok
-    |> Option.map ~f:(fun lisp -> evaluate lisp)
+    |> Option.map ~f:(fun lisp -> eval lisp)
     |> Option.value_exn
 
 end

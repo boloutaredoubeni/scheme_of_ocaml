@@ -31,7 +31,7 @@ let rec repl () =
               |> read_sexp
               |> parse_sexp
               |> Result.ok
-              |> Option.map ~f:(fun lisp -> print_expr @@ evaluate lisp)
+              |> Option.map ~f:(fun lisp -> print_expr @@ eval lisp)
               |> Option.value ~default:"ERROR"
               |> printer
               (*|> codegen

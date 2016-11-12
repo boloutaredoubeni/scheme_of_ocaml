@@ -1,5 +1,7 @@
 open Core.Std
 
-val add: key:(Lisp.t) -> data:(Lisp.t) -> unit
+open Lisp
 
-val lookup: Lisp.t -> Lisp.t Option.t
+val add: key:('a primitive expr) -> data:('b primitive expr) -> unit
+
+val lookup: ('a primitive expr) -> 'b primitive expr Option.t
